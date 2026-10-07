@@ -5,15 +5,20 @@ const storage={get(k){try{return localStorage.getItem(k);}catch{return null;}},s
 function alertMsg(msg){$('alert').textContent=msg;$('alert').hidden=false;setTimeout(()=>{$('alert').hidden=true},6000);}
 function send(event,payload={},after){socket.emit(event,payload,res=>{if(!res?.ok){if(res?.message)alertMsg(res.message);return;}after?.(res);});}
 function codeFromUrl(){return new URLSearchParams(location.search).get('room')?.trim().toUpperCase()||'';}
-$('code').value=codeFromUrl();$('name').value=storage.get('spot:name')||'';
-function enter(code,id){me=id;storage.set('spot:room',code);storage.set('spot:id:'+code,id);storage.set('spot:name',$('name').value.trim());history.replaceState(null,'','?room='+code);render();}
-function join(code){code=String(code||'').trim().toUpperCase();send('room:join',{code,name:$('name').value,playerId:storage.get('spot:id:'+code)},res=>enter(res.code,res.playerId));}
-$('create').onclick=()=>send('room:create',{name:$('name').value},res=>enter(res.code,res.playerId));
-$('join').onclick=()=>join($('code').value);
-$('code').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,4)});
+let entryView='homeMenu';
+function showEntry(view){entryView=view;for(const id of ['homeMenu','createPanel','joinPanel'])$(id).hidden=id!==view;}
+const savedName=storage.get('spot:name')||'';
+$('createName').value=savedName;$('joinName').value=savedName;
+$('joinCode').value=codeFromUrl();if($('joinCode').value)showEntry('joinPanel');
+$('openCreate').onclick=()=>showEntry('createPanel');$('openJoin').onclick=()=>showEntry('joinPanel');
+document.querySelectorAll('.backButton').forEach(button=>button.onclick=()=>showEntry('homeMenu'));
+function enter(code,id,name){me=id;storage.set('spot:room',code);storage.set('spot:id:'+code,id);storage.set('spot:name',name);history.replaceState(null,'','?room='+code);render();}
+$('createForm').onsubmit=e=>{e.preventDefault();const name=$('createName').value.trim();if(!name)return alertMsg('Enter your name.');send('room:create',{name},res=>enter(res.code,res.playerId,name));};
+$('joinForm').onsubmit=e=>{e.preventDefault();const name=$('joinName').value.trim(),code=$('joinCode').value.trim().toUpperCase();if(!name)return alertMsg('Enter your name.');send('room:join',{code,name,playerId:storage.get('spot:id:'+code)},res=>enter(res.code,res.playerId,name));};
+$('joinCode').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,4)});
 $('start').onclick=()=>send('game:start');$('again').onclick=()=>send('game:restart');
 $('invite').onclick=async()=>{try{await navigator.clipboard.writeText(location.href);$('invite').textContent='Copied!';setTimeout(()=>$('invite').textContent='Copy invite link',2000);}catch{alertMsg('Copy the URL from your address bar.')}};
-document.querySelectorAll('.leave').forEach(b=>b.onclick=()=>{send('room:leave',{},()=>{storage.remove('spot:room');me=null;state=null;word='';results=null;history.replaceState(null,'',location.pathname);render();});});
+document.querySelectorAll('.leave').forEach(b=>b.onclick=()=>{send('room:leave',{},()=>{storage.remove('spot:room');me=null;state=null;word='';results=null;history.replaceState(null,'',location.pathname);showEntry('homeMenu');render();});});
 $('toggleWord').onclick=()=>{wordHidden=!wordHidden;renderWord();};
 function renderWord(){$('word').textContent=wordHidden?'••••••':word||'Waiting…';$('toggleWord').textContent=wordHidden?'Show':'Hide';}
 $('chatForm').onsubmit=e=>{e.preventDefault();send('chat:send',{text:$('chatText').value},()=>$('chatText').value='');};
@@ -41,9 +46,9 @@ function render(){
 }
 function tick(){if(state?.game&&['drawing','discussion','voting','guessing'].includes(state.phase))$('timer').textContent=Math.max(0,Math.ceil((state.game.endsAt-Date.now())/1000))+'s';else $('timer').textContent='';}
 setInterval(tick,200);
-socket.on('connect',()=>{const code=storage.get('spot:room');if(code&&storage.get('spot:id:'+code))send('room:join',{code,name:storage.get('spot:name')||$('name').value,playerId:storage.get('spot:id:'+code)},res=>enter(res.code,res.playerId));});
+socket.on('connect',()=>{const code=storage.get('spot:room');if(code&&storage.get('spot:id:'+code))send('room:join',{code,name:storage.get('spot:name')||$('joinName').value,playerId:storage.get('spot:id:'+code)},res=>enter(res.code,res.playerId,storage.get('spot:name')||$('joinName').value));});
 socket.on('disconnect',()=>alertMsg('Connection lost. Reconnecting…'));
-socket.on('room:state',s=>{if(state?.phase!==s.phase||state?.game?.turnId!==s.game?.turnId)submitted=false;if(s.phase==='lobby'&&state?.phase!=='lobby')word='';if(s.phase==='drawing'&&state?.phase==='results'){results=null;wordHidden=false;}$('code').value=s.code;state=s;render();tick();});
+socket.on('room:state',s=>{if(state?.phase!==s.phase||state?.game?.turnId!==s.game?.turnId)submitted=false;if(s.phase==='lobby'&&state?.phase!=='lobby')word='';if(s.phase==='drawing'&&state?.phase==='results'){results=null;wordHidden=false;}$('joinCode').value=s.code;state=s;render();tick();});
 socket.on('game:yourWord',v=>{word=v.word;wordHidden=false;renderWord();});
 socket.on('game:results',r=>{results=r;render();});
 socket.on('stroke:live',stroke=>{if(state?.phase==='drawing')canvas.live(stroke);});

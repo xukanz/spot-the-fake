@@ -1,1 +1,73 @@
-:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#222b38;background:#f4f6fa}*{box-sizing:border-box}body{margin:0}main{max-width:1100px;margin:auto;padding:20px}header{text-align:center;margin:14px 0 30px}h1{font-size:clamp(2rem,6vw,3.6rem);margin:0;color:#283e70}h2,h3{margin-top:0}.card{background:white;border:1px solid #dce3ee;border-radius:16px;padding:22px;box-shadow:0 4px 20px #172e5410;margin-bottom:16px}#home{max-width:520px;margin:auto}label{display:block;font-weight:600;margin:14px 0}input{display:block;width:100%;margin:7px 0;padding:12px;border:1px solid #aebbd0;border-radius:9px;font:inherit}button{border:0;border-radius:9px;padding:11px 16px;background:#315cbe;color:white;font:inherit;font-weight:650;cursor:pointer;margin:4px 5px 4px 0}button:hover{filter:brightness(.91)}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#e9eef7;color:#293f69}.small{padding:6px 9px;font-size:.8rem}.actions{margin-bottom:22px}details{margin-top:26px;line-height:1.55}summary{font-weight:700;cursor:pointer}#alert{background:#fff0e8;border:1px solid #e6ab92;color:#8b3417;padding:12px;border-radius:8px;margin-bottom:15px}#roomCode{letter-spacing:.14em;color:#315cbe}.gameTop{display:flex;justify-content:space-between;gap:16px;align-items:center}.gameTop>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.eyebrow{font-size:.8rem;text-transform:uppercase;color:#586881}#word{font-size:1.3rem}#timer{font-variant-numeric:tabular-nums;background:#edf3ff;padding:8px 12px;border-radius:8px}.status{padding:14px 18px;border-radius:10px;background:#dfeaff;font-weight:700}.gameGrid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px}canvas{display:block;width:100%;aspect-ratio:1;background:white;border:2px solid #aabbd6;border-radius:12px;touch-action:none}#board{cursor:crosshair}.tip{color:#647184;font-size:.9rem}ul{list-style:none;padding:0}li{padding:7px 0}.dot{display:inline-block;width:13px;height:13px;border-radius:50%;margin-right:8px;vertical-align:middle}.muted{color:#808a9a}#messages{height:170px;overflow:auto;background:#f6f8fc;padding:10px;border-radius:8px;margin-bottom:8px;word-break:break-word}#messages p{margin:5px 0}form{display:flex;gap:5px}form input{min-width:0}#finalBoard{max-width:500px;margin-bottom:15px}#results{max-width:700px;margin:auto}@media(max-width:760px){main{padding:12px}.card{padding:16px}.gameGrid{grid-template-columns:1fr}.gameTop{align-items:flex-start}.gameTop>div{align-items:flex-start}#board{max-width:100%}}
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#222b38;background:#f4f6fa}
+*{box-sizing:border-box}
+body{margin:0}
+main{max-width:1100px;margin:auto;padding:20px}
+[hidden]{display:none!important}
+h1,h2,h3{margin-top:0}
+button{border:0;border-radius:9px;padding:11px 16px;background:#315cbe;color:white;font:inherit;font-weight:650;cursor:pointer;margin:4px 5px 4px 0}
+button:hover{filter:brightness(.94)}
+button:disabled{opacity:.45;cursor:not-allowed}
+input{display:block;width:100%;margin:7px 0;padding:12px;border:1px solid #aebbd0;border-radius:9px;font:inherit}
+label{display:block;font-weight:600;margin:14px 0}
+.card{background:white;border:1px solid #dce3ee;border-radius:16px;padding:22px;box-shadow:0 4px 20px #172e5410;margin-bottom:16px}
+.secondary{background:#e9eef7;color:#293f69}
+.small{padding:6px 9px;font-size:.8rem}
+#alert{max-width:520px;background:#fff0e8;border:1px solid #e6ab92;color:#8b3417;padding:12px;border-radius:8px;margin:0 auto 15px}
+
+/* Entry screens follow the approved home, create, and join mockups. */
+.entry-shell{width:min(100%,430px);min-height:590px;margin:10px auto 30px;background:#f7f9fd;border:1px solid #d7e0ef;border-radius:24px;box-shadow:0 16px 42px #172e5420;overflow:hidden}
+#homeMenu{padding:38px 28px 26px}
+.entry-hero{text-align:center;margin:10px 0 42px}
+.entry-mark{display:grid;place-items:center;width:50px;height:50px;border-radius:15px;background:#dfeaff;color:#315cbe;font-size:28px}
+.entry-hero .entry-mark{margin:0 auto 14px}
+.entry-hero h1{font-size:31px;letter-spacing:-.035em;margin:0;color:#283e70}
+.entry-hero p{max-width:295px;margin:9px auto 0;color:#687790;font-size:14px;line-height:1.5}
+.entry-choices{display:grid;gap:14px}
+.entry-choice{width:100%;display:flex;align-items:center;gap:15px;padding:20px 17px;margin:0;text-align:left;border:1px solid #d8e1f0;border-radius:15px;background:white;color:#26344b;box-shadow:0 4px 15px #223c6b0b;transition:transform .15s,border-color .15s}
+.entry-choice:hover{border-color:#7da4e9;transform:translateY(-1px);filter:none}
+.choice-icon{display:grid;place-items:center;flex:none;width:43px;height:43px;border-radius:12px;background:#e7efff;color:#315cbe;font-size:25px;font-weight:400}
+.choice-copy{display:grid;gap:4px;flex:1}
+.choice-copy strong{font-size:18px}
+.choice-copy small{font-size:13px;color:#66768f;font-weight:400}
+.choice-chevron{font-size:30px;color:#8295b5;line-height:1;font-weight:400}
+.entry-rules{margin-top:32px;padding-top:24px;border-top:1px solid #dce4f0;font-size:13px;line-height:1.55}
+.entry-rules summary{font-size:14px;font-weight:700;cursor:pointer}
+.entry-rules p{margin:8px 0 0;color:#66768f}
+.entry-nav{height:56px;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 22px;background:white;border-bottom:1px solid #e2e8f2;font-size:14px;color:#315cbe}
+.entry-nav strong{font-size:14px;color:#283e70}
+.entry-nav span,.entry-nav button{min-width:62px}
+.entry-nav button{background:none;color:#315cbe;border:0;margin:0;padding:8px 0;text-align:left;font-size:14px;font-weight:400}
+.entry-form-content{padding:30px 23px 22px}
+.entry-form-content .entry-mark{width:48px;height:48px;border-radius:13px}
+.entry-form-content h2{font-size:25px;letter-spacing:-.025em;margin:20px 0 8px}
+.entry-form-content>p:first-of-type{min-height:64px;margin:0 0 22px;color:#687790;font-size:14px;line-height:1.5}
+.entry-form-content label{margin:17px 0 8px;font-size:14px}
+.entry-form-content input{margin:0;border-color:#b9c7db;padding:13px 14px;border-radius:10px;font-size:16px}
+.entry-form-content input::placeholder{color:#8b99ab}
+#joinCode{text-transform:uppercase;letter-spacing:.16em}
+.entry-submit{display:block;width:100%;margin:27px 0 0;padding:14px;border-radius:10px}
+.entry-foot{text-align:center;margin:16px 0 0;color:#758399;font-size:12px;line-height:1.4}
+
+#roomCode{letter-spacing:.14em;color:#315cbe}
+.gameTop{display:flex;justify-content:space-between;gap:16px;align-items:center}
+.gameTop>div{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.eyebrow{font-size:.8rem;text-transform:uppercase;color:#586881}
+#word{font-size:1.3rem}
+#timer{font-variant-numeric:tabular-nums;background:#edf3ff;padding:8px 12px;border-radius:8px}
+.status{padding:14px 18px;border-radius:10px;background:#dfeaff;font-weight:700}
+.gameGrid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px}
+canvas{display:block;width:100%;aspect-ratio:1;background:white;border:2px solid #aabbd6;border-radius:12px;touch-action:none}
+#board{cursor:crosshair}
+.tip{color:#647184;font-size:.9rem}
+ul{list-style:none;padding:0}
+li{padding:7px 0}
+.dot{display:inline-block;width:13px;height:13px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.muted{color:#808a9a}
+#messages{height:170px;overflow:auto;background:#f6f8fc;padding:10px;border-radius:8px;margin-bottom:8px;word-break:break-word}
+#messages p{margin:5px 0}
+form:not(#createForm):not(#joinForm){display:flex;gap:5px}
+form:not(#createForm):not(#joinForm) input{min-width:0}
+#finalBoard{max-width:500px;margin-bottom:15px}
+#results{max-width:700px;margin:auto}
+@media(max-width:760px){main{padding:12px}.card{padding:16px}.gameGrid{grid-template-columns:1fr}.gameTop{align-items:flex-start}.gameTop>div{align-items:flex-start}#board{max-width:100%}}
+@media(max-width:420px){.entry-shell{margin:0 auto 20px;min-height:560px}#homeMenu{padding:28px 19px 24px}.entry-form-content{padding:26px 19px 22px}}
