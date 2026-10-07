@@ -1,6 +1,7 @@
 const { randomInt, randomUUID } = require('node:crypto');
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-const colors = ['#d64a46','#2276c7','#309b70','#b46b16','#8b5cba','#cc6295','#467f82','#6865c8'];
+const colors = ['#F2545B','#14A098','#FF9318','#8E6CEF','#4FB342','#F15FB0','#2F80ED','#B5762E'];
+function freeColor(room){const used=new Set([...room.players.values()].map(p=>p.color));return colors.find(c=>!used.has(c))||colors[room.players.size%colors.length];}
 const rooms = new Map();
 function code() { let value; do { value = Array.from({length:4},()=>alphabet[randomInt(alphabet.length)]).join(''); } while(rooms.has(value)); return value; }
 function nameFor(raw, room, exclude) {
@@ -24,7 +25,7 @@ function join(room,socket,rawName,playerId) {
  } else {
   if(room.phase!=='lobby') throw Error('Game in progress. Join the next round.');
   if(room.players.size>=8) throw Error('Room is full (8 players).');
-  p={id:randomUUID(),name:nameFor(rawName,room),color:colors[room.players.size],connected:true,socketId:socket.id};
+  p={id:randomUUID(),name:nameFor(rawName,room),color:freeColor(room),connected:true,socketId:socket.id};
   room.players.set(p.id,p);
  }
  socket.data.roomCode=room.code;socket.data.playerId=p.id;socket.join(room.code);room.lastActivity=Date.now();return p;

@@ -32,6 +32,6 @@ function nextTurn(room){
  }
  room.phase='discussion';
 }
-function publicState(room){const g=room.game;return {code:room.code,hostId:room.hostId,phase:room.phase,notice:room.notice,players:[...room.players.values()].map(({id,name,color,connected})=>({id,name,color,connected})),game:g&&{round:g.round,turnId:room.phase==='drawing'?current(room):null,endsAt:g.endsAt,strokes:g.strokes,chat:g.chat,voted:[...g.votes.keys()],votes:room.phase==='results'?[...g.votes]:undefined}};}
+function publicState(room){const g=room.game;return {code:room.code,hostId:room.hostId,phase:room.phase,notice:room.notice,players:[...room.players.values()].map(({id,name,color,connected})=>({id,name,color,connected})),game:g&&{round:g.round,turnId:room.phase==='drawing'?current(room):null,turnOrder:g.turnOrder,guesserId:room.phase==='guessing'?g.undercoverId:null,endsAt:g.endsAt,strokes:g.strokes,chat:g.chat,voted:[...g.votes.keys()],votes:room.phase==='results'?[...g.votes]:undefined}};}
 function results(room){const g=room.game;return {wordA:g.wordA,wordB:g.wordB,undercoverId:g.undercoverId,winner:g.winner,guess:g.guess,votes:[...g.votes]};}
 module.exports={DURATION,start,current,validatePoints,resolveVote,guess,nextTurn,publicState,results};

@@ -1,38 +1,164 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Spot the Fake</title><link rel="stylesheet" href="/style.css"></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3B36C4">
+<title>Spot the Fake</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%96%8D%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Gochi+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
 <main>
-<div id="alert" role="alert" hidden></div>
-<section id="home" class="entry-shell">
-  <div id="homeMenu" class="entry-view">
-    <header class="entry-hero"><div class="entry-mark" aria-hidden="true">✦</div><h1>Spot the Fake</h1><p>Draw together. Find the player with a different word.</p></header>
-    <div class="entry-choices">
-      <button id="openCreate" type="button" class="entry-choice"><span class="choice-icon" aria-hidden="true">＋</span><span class="choice-copy"><strong>Create</strong><small>Start a room and invite friends</small></span><span class="choice-chevron" aria-hidden="true">›</span></button>
-      <button id="openJoin" type="button" class="entry-choice"><span class="choice-icon" aria-hidden="true">↗</span><span class="choice-copy"><strong>Join</strong><small>Enter a friend's room</small></span><span class="choice-chevron" aria-hidden="true">›</span></button>
+<div id="alert" class="toast" role="alert" hidden></div>
+
+<!-- Home / create / join -->
+<section id="home" class="sheet narrow">
+  <div id="homeMenu" class="entry">
+    <span class="floaty cap" style="--c:var(--m-red);top:26px;left:22px;--fr:-10deg" aria-hidden="true"></span>
+    <span class="floaty cap sm" style="--c:var(--m-teal);top:56px;right:26px;animation-delay:-1.5s" aria-hidden="true"></span>
+    <span class="floaty cap xs" style="--c:var(--m-violet);top:190px;right:38px;animation-delay:-3s" aria-hidden="true"></span>
+    <div class="logo">
+      <svg class="swoosh" viewBox="0 0 300 130" aria-hidden="true"><path d="M24 100 C60 26,110 22,132 72 S206 116,276 36" pathLength="420"/></svg>
+      <h1>Spot<br>the Fake</h1>
     </div>
-    <details class="entry-rules"><summary>How to play</summary><p>Three to eight players each get a secret drawing word. One player gets a different but similar word, without knowing they are undercover. Take turns adding exactly one stroke in each of two rounds. Discuss the drawing, then vote for the undercover. If caught, the undercover can still win by guessing the others’ word.</p></details>
-  </div>
-  <div id="createPanel" class="entry-view" hidden>
-    <nav class="entry-nav" aria-label="Create room navigation"><button type="button" class="backButton">← Back</button><strong>Spot the Fake</strong><span aria-hidden="true"></span></nav>
-    <div class="entry-form-content"><div class="entry-mark" aria-hidden="true">＋</div><h2>Create a room</h2><p>Pick a name. You'll get a room code to share with friends.</p>
-      <form id="createForm"><label for="createName">Your name</label><input id="createName" name="name" maxlength="16" required autocomplete="nickname" placeholder="Enter your name"><button type="submit" class="entry-submit">Create room</button></form>
-      <p class="entry-foot">3–8 players · Each person joins on their own device</p>
+    <p class="lede">Everyone draws the same word.<br>One of you secretly doesn't.</p>
+    <div class="stack">
+      <button id="openCreate" type="button" class="btn btn-sun">Create a room</button>
+      <button id="openJoin" type="button" class="btn">Join with a code</button>
     </div>
+    <ol class="steps">
+      <li><span class="cap sm" style="--c:var(--m-red)">1</span>Get a secret word. One player's is slightly different.</li>
+      <li><span class="cap sm" style="--c:var(--m-teal)">2</span>Take turns adding one stroke, two rounds.</li>
+      <li><span class="cap sm" style="--c:var(--m-violet)">3</span>Discuss, then vote out the fake.</li>
+    </ol>
   </div>
-  <div id="joinPanel" class="entry-view" hidden>
-    <nav class="entry-nav" aria-label="Join room navigation"><button type="button" class="backButton">← Back</button><strong>Spot the Fake</strong><span aria-hidden="true"></span></nav>
-    <div class="entry-form-content"><div class="entry-mark" aria-hidden="true">↗</div><h2>Join a room</h2><p>Enter your name and the four-letter code from your friend.</p>
-      <form id="joinForm"><label for="joinName">Your name</label><input id="joinName" name="name" maxlength="16" required autocomplete="nickname" placeholder="Enter your name"><label for="joinCode">Room code</label><input id="joinCode" name="code" maxlength="4" minlength="4" pattern="[A-HJ-NP-Z]{4}" required autocapitalize="characters" autocomplete="off" placeholder="ABCD"><button type="submit" class="entry-submit">Join room</button></form>
-      <p class="entry-foot">Joining from an invite link can fill the code for you.</p>
+  <div id="createPanel" class="entry" hidden>
+    <button type="button" class="back-link backButton">← Back</button>
+    <h2>Create a room</h2>
+    <p class="muted">Pick a name. You'll get a code to share with friends.</p>
+    <form id="createForm" class="stack">
+      <label for="createName">Your name</label>
+      <input id="createName" name="name" maxlength="16" required autocomplete="nickname" placeholder="Mia">
+      <button type="submit" class="btn btn-sun">Create room</button>
+    </form>
+    <p class="foot">3–8 players, each on their own device</p>
+  </div>
+  <div id="joinPanel" class="entry" hidden>
+    <button type="button" class="back-link backButton">← Back</button>
+    <h2>Join a room</h2>
+    <p class="muted">Enter your name and the four-letter code from your friend.</p>
+    <form id="joinForm" class="stack">
+      <label for="joinName">Your name</label>
+      <input id="joinName" name="name" maxlength="16" required autocomplete="nickname" placeholder="Leo">
+      <label for="joinCode">Room code</label>
+      <input id="joinCode" name="code" maxlength="4" minlength="4" pattern="[A-HJ-NP-Z]{4}" required autocapitalize="characters" autocomplete="off" placeholder="KWRF">
+      <button type="submit" class="btn btn-sun">Join room</button>
+    </form>
+    <p class="foot">Opening an invite link fills the code for you.</p>
+  </div>
+</section>
+
+<!-- Lobby -->
+<section id="lobby" class="sheet narrow" hidden>
+  <p class="label center">Room code</p>
+  <div id="roomCode" class="code" aria-live="polite"></div>
+  <button id="invite" class="pill-btn center-block">Copy invite link</button>
+  <p id="notice" class="notice" hidden></p>
+  <div class="list-head"><b>Players</b><span id="playerCount" class="muted small"></span></div>
+  <ul id="lobbyPlayers" class="players"></ul>
+  <div class="lobby-foot">
+    <p id="startHint" class="muted center small"></p>
+    <button id="start" class="btn btn-sun">Start game</button>
+    <button class="leave link-btn">Leave room</button>
+  </div>
+</section>
+
+<!-- Game -->
+<section id="game" hidden>
+  <div class="sheet game-sheet">
+    <div class="game-top">
+      <button id="toggleWord" class="sticky" type="button" aria-label="Hide or show your word">
+        <small id="wordHint">Your word · tap to hide</small><b id="word"></b>
+      </button>
+      <div class="phase-box">
+        <span id="phase" class="muted small"></span>
+        <div id="timer" class="timer" aria-live="off"><span id="timerNum"></span></div>
+      </div>
+    </div>
+    <div id="turns" class="turns" aria-label="Turn order"></div>
+    <div id="status" class="banner"><span id="statusDot" class="dot"></span><span id="statusText"></span></div>
+    <div class="game-grid">
+      <div class="board-wrap">
+        <div class="paper"><canvas id="board" width="600" height="600" aria-label="Shared drawing canvas"></canvas></div>
+        <p id="tip" class="muted small center">Lift your finger to finish. No undo.</p>
+      </div>
+      <aside class="side">
+        <div id="playersBox">
+          <div class="list-head"><b id="sideTitle">Players</b><span id="voteCount" class="muted small"></span></div>
+          <ul id="gamePlayers" class="players compact"></ul>
+        </div>
+        <div id="chat" hidden>
+          <div class="list-head"><b>Discussion</b></div>
+          <div id="messages" aria-live="polite"></div>
+          <form id="chatForm" class="inline-form"><input id="chatText" maxlength="100" placeholder="Purple drew another fruit…" aria-label="Chat message"><button class="btn btn-sun">Send</button></form>
+        </div>
+        <div id="guessBox" hidden>
+          <div class="list-head"><b>Final guess</b></div>
+          <p class="muted small">You were caught. Guess everyone else's word to steal the win.</p>
+          <form id="guessForm" class="inline-form"><input id="guessText" maxlength="80" placeholder="Their word" aria-label="Everyone else's word"><button class="btn btn-sun">Guess</button></form>
+        </div>
+      </aside>
     </div>
   </div>
 </section>
-<section id="lobby" class="card" hidden><h2>Room <strong id="roomCode"></strong></h2><button id="invite" class="secondary">Copy invite link</button><p id="notice"></p><h3>Players</h3><ul id="lobbyPlayers"></ul><p id="startHint"></p><button id="start">Start game</button><button class="secondary leave">Leave room</button></section>
-<section id="game" hidden><div class="gameTop card"><div><span class="eyebrow">Your word</span><strong id="word"></strong><button id="toggleWord" class="secondary small">Hide</button></div><div><strong id="phase"></strong><span id="timer"></span></div></div><p id="status" class="status"></p><div class="gameGrid"><div><canvas id="board" width="600" height="600" aria-label="Shared drawing canvas"></canvas><p class="tip">One continuous stroke per turn. Draw with a finger, pen, or mouse.</p></div><aside class="card"><h3>Players</h3><ul id="gamePlayers"></ul><div id="chat" hidden><h3>Discussion</h3><div id="messages" aria-live="polite"></div><form id="chatForm"><input id="chatText" maxlength="100" placeholder="Say something…" aria-label="Chat message"><button>Send</button></form></div><div id="guessBox" hidden><h3>Final guess</h3><p>Guess the civilians’ word to win.</p><form id="guessForm"><input id="guessText" maxlength="80" placeholder="Their word" aria-label="Civilians' word"><button>Guess</button></form></div></aside></div></section>
-<section id="results" class="results-screen" hidden>
-  <div id="resultConfetti" class="result-confetti" aria-hidden="true"></div>
-  <div class="results-top"><strong>✦ &nbsp; Spot the Fake</strong><span>ROUND COMPLETE</span></div>
-  <div class="results-hero"><span id="congrats" class="congrats">Congratulations!</span><div id="resultBadge" class="result-badge" aria-hidden="true">✦</div><span id="resultRole" class="result-role"></span><h2 id="winner" aria-live="polite"></h2><p id="resultSummary"></p></div>
-  <div class="results-content"><div class="results-reveal"><span class="results-kicker">THE REVEAL</span><div class="result-person"><span id="resultAvatar" class="result-avatar"></span><span class="result-person-copy"><strong id="undercoverName"></strong><small id="resultVoteNote"></small></span><em id="resultTag"></em></div><div class="result-words"><span><small>CIVILIANS’ WORD</small><strong id="civilianWord"></strong></span><b aria-hidden="true">≠</b><span><small>UNDERCOVER WORD</small><strong id="undercoverWord"></strong></span></div><p id="resultDetail" class="result-detail"></p></div>
-    <div class="results-lower"><div class="result-votes"><h3>Votes</h3><ul id="votes"></ul></div><div class="results-drawing"><h3>Final drawing</h3><canvas id="finalBoard" width="600" height="600" aria-label="Final drawing"></canvas></div></div>
-    <div class="results-actions"><button id="again">Play again →</button><button id="replayReveal" class="secondary" type="button">↻ Replay reveal</button><button class="secondary leave">Leave room</button></div>
+
+<!-- Results -->
+<section id="results" class="sheet narrow res" hidden>
+  <div id="hero" class="hero" role="button" tabindex="0">
+    <div class="rays" aria-hidden="true"></div>
+    <canvas id="fx" aria-hidden="true"></canvas>
+    <span id="stamp" class="stamp"></span>
+    <h2 id="winner" aria-live="polite"></h2>
+    <p id="resultSummary"></p>
+    <span id="resultRole" class="role-pill"></span>
+    <div id="tapHint" class="tap-hint"></div>
   </div>
-</section></main><script src="/socket.io/socket.io.js"></script><script src="/canvas.js"></script><script src="/results.js"></script><script src="/client.js"></script></body></html>
+  <div class="res-body">
+    <div class="flips">
+      <button id="flipA" class="flip open" type="button"><span class="front">Everyone's word</span><span class="back"><small>Everyone</small><b id="civilianWord"></b></span></button>
+      <button id="flipB" class="flip" type="button"><span class="front">Tap to reveal the fake's word</span><span class="back"><small id="fakeLabel"></small><b id="undercoverWord"></b></span></button>
+    </div>
+    <p id="resultDetail" class="muted small"></p>
+    <div class="replay">
+      <div class="paper small"><canvas id="finalBoard" width="300" height="300" aria-label="Final drawing"></canvas></div>
+      <div>
+        <div id="replayWho" class="who">The final drawing</div>
+        <p class="muted small">Watch every stroke in order. The fake's strokes glow.</p>
+        <button id="replayReveal" class="pill-btn" type="button">Replay strokes</button>
+      </div>
+    </div>
+    <div>
+      <b class="block-title">Votes</b>
+      <ul id="votes" class="bars"></ul>
+    </div>
+    <div id="reacts" class="reacts" aria-label="Send a reaction to the room">
+      <button type="button" aria-label="Laugh">😂</button><button type="button" aria-label="Shocked">😱</button><button type="button" aria-label="Fire">🔥</button><button type="button" aria-label="Clap">👏</button><button type="button" aria-label="Cry">😭</button>
+    </div>
+  </div>
+  <div class="res-actions">
+    <button id="again" class="btn btn-sun">Play again</button>
+    <p id="waitHost" class="muted small center" hidden>Waiting for the host to start the next game</p>
+    <button class="leave btn">Leave</button>
+  </div>
+</section>
+</main>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/canvas.js"></script>
+<script src="/results.js"></script>
+<script src="/client.js"></script>
+</body>
+</html>

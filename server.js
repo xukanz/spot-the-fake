@@ -56,6 +56,8 @@ io.on('connection',socket=>{
   if(room.game.votes.size===[...room.players.values()].filter(x=>x.connected).length){clearTimeout(room.timer);G.resolveVote(room);phaseTimer(room);}emit(room);return {};});
  handler(socket,'guess:submit',({text})=>{const {room,p}=seat(socket);if(room.phase!=='guessing'||room.game.undercoverId!==p.id)throw Error('Only the undercover can guess now.');G.guess(room,text);phaseTimer(room);emit(room);return {};});
  handler(socket,'game:restart',()=>{const {room,p}=seat(socket);if(p.id!==room.hostId||room.phase!=='results')throw Error('Only the host can start another game.');for(const [id,x] of room.players)if(!x.connected)room.players.delete(id);G.start(room);for(const x of room.players.values())if(x.connected)sendWord(io.sockets.sockets.get(x.socketId),room,x);phaseTimer(room);emit(room);return {};});
+ const REACTIONS=['😂','😱','🔥','👏','😭'];let lastReaction=0;
+ handler(socket,'reaction:send',({emoji})=>{const {room,p}=seat(socket);if(room.phase!=='results'||!REACTIONS.includes(emoji))return {};if(Date.now()-lastReaction<250)return {};lastReaction=Date.now();io.to(room.code).emit('reaction',{playerId:p.id,emoji});return {};});
  socket.on('disconnect',()=>leave(socket));
 });
 setInterval(R.cleanup,60000).unref();
