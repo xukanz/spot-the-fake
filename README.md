@@ -1,6 +1,12 @@
 # Spot the Fake
 
+**[Play now → spot-the-fake-ravw.onrender.com](https://spot-the-fake-ravw.onrender.com/)**
+
+![Spot the Fake: drawing screen, winning results, and losing results on three phones](docs/cover.png)
+
 A live drawing and deduction game for 3–8 players on phones or computers. One Express service hosts the page and Socket.IO rooms. No account or database is needed.
+
+> The game runs on Render's free plan, which sleeps after 15 minutes without visitors. If the page takes a moment to load, it's waking up. Give it up to a minute.
 
 ## Play
 
