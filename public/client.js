@@ -194,6 +194,9 @@ function render(){
  renderGame();
 }
 socket.on('connect',()=>{const code=storage.get('spot:room');if(code&&storage.get('spot:id:'+code)){const name=storage.get('spot:name')||$('joinName').value;send('room:join',{code,name,playerId:storage.get('spot:id:'+code)},res=>enter(res.code,res.playerId,name));}});
+let appVersion=null;
+// After a redeploy the socket reconnects to a new server; reload so this tab runs the new code.
+socket.on('app:version',v=>{if(appVersion&&appVersion!==v)location.reload();else appVersion=v;});
 socket.on('disconnect',()=>alertMsg('Connection lost. Reconnecting…'));
 socket.on('room:state',s=>{
  if(state?.phase!==s.phase||state?.game?.turnId!==s.game?.turnId)submitted=false;

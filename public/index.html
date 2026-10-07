@@ -60,6 +60,22 @@
     </form>
     <p class="foot">Opening an invite link fills the code for you.</p>
   </div>
+  <div class="home-art" aria-hidden="true">
+    <div class="art-note art-note-a"><small>Everyone</small><b>watermelon</b></div>
+    <div class="art-note art-note-b"><small>The fake</small><b>cantaloupe</b></div>
+    <div class="paper art-paper">
+      <svg viewBox="0 0 100 100">
+        <path d="M14 55 Q50 98 86 55" fill="none" stroke="#F2545B" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M14 55 L86 55" fill="none" stroke="#FF9318" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M22 59 Q50 86 78 59" fill="none" stroke="#14A098" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M30 30 Q50 10 70 30 Q50 50 30 30" fill="none" stroke="#FFD23F" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+        <path d="M30 30 Q50 10 70 30 Q50 50 30 30" fill="none" stroke="#8E6CEF" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M40 64 l2 3 M50 68 l2 3 M60 64 l2 3" stroke="#F2545B" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+      <span class="art-tag" style="--c:#8E6CEF;top:14%;right:-6%">Jo?</span>
+    </div>
+    <div class="art-caps"><span class="cap" style="--c:var(--m-red)">M</span><span class="cap" style="--c:var(--m-orange)">S</span><span class="cap" style="--c:var(--m-teal)">L</span><span class="cap" style="--c:var(--m-violet)">J</span></div>
+  </div>
 </section>
 
 <!-- Lobby -->
@@ -68,8 +84,10 @@
   <div id="roomCode" class="code" aria-live="polite"></div>
   <button id="invite" class="pill-btn center-block">Copy invite link</button>
   <p id="notice" class="notice" hidden></p>
-  <div class="list-head"><b>Players</b><span id="playerCount" class="muted small"></span></div>
-  <ul id="lobbyPlayers" class="players"></ul>
+  <div class="roster">
+    <div class="list-head"><b>Players</b><span id="playerCount" class="muted small"></span></div>
+    <ul id="lobbyPlayers" class="players"></ul>
+  </div>
   <div class="lobby-foot">
     <p id="startHint" class="muted center small"></p>
     <button id="start" class="btn btn-sun">Start game</button>

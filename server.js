@@ -2,7 +2,9 @@ const express=require('express');
 const http=require('node:http');
 const {Server}=require('socket.io');
 const R=require('./src/rooms');const G=require('./src/game');
-const app=express();app.use(express.static('public'));
+const app=express();app.use(express.static('public',{cacheControl:false,setHeaders:res=>res.set('Cache-Control','no-cache')}));
+// Changes on every deploy so open tabs know to reload the new page.
+const BUILD=String(Date.now());
 const server=http.createServer(app);const io=new Server(server,{maxHttpBufferSize:100000});
 function emit(room){room.lastActivity=Date.now();io.to(room.code).emit('room:state',G.publicState(room));if(room.phase==='results')io.to(room.code).emit('game:results',G.results(room));}
 function phaseTimer(room){
@@ -37,6 +39,7 @@ function leave(socket){let room=R.rooms.get(socket.data.roomCode);let p=room?.pl
 }
 function handler(socket,event,fn){socket.on(event,(payload={},ack)=>{try{const result=fn(payload);if(typeof ack==='function')ack({ok:true,...result});}catch(e){socket.emit('error',{message:e.message});if(typeof ack==='function')ack({ok:false,message:e.message});}});}
 io.on('connection',socket=>{
+ socket.emit('app:version',BUILD);
  handler(socket,'room:create',({name})=>{leave(socket);const {room,player}=R.create(socket,name);emit(room);return {code:room.code,playerId:player.id};});
  handler(socket,'room:join',({code,name,playerId})=>{const room=R.rooms.get(String(code||'').trim().toUpperCase());if(!room)throw Error('Room not found. Check the four-letter code.');
   if(socket.data.roomCode===room.code&&socket.data.playerId!==playerId)throw Error('Leave your current seat before joining again.');
