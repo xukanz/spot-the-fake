@@ -163,7 +163,7 @@ label{font-weight:700;font-size:14px;margin-top:6px}
 .flip.open .front{transform:rotateY(-180deg)}.flip.open .back{transform:rotateY(0)}
 .flip .back small{font-size:11px;color:var(--ink-soft);font-weight:700}
 .flip .back b{font-family:var(--hand);font-weight:400;font-size:26px;line-height:1;overflow-wrap:anywhere}
-#undercoverWord{color:var(--m-violet)}
+.flip .back b.fake-word{color:var(--m-violet)}
 .replay{display:grid;grid-template-columns:128px 1fr;gap:14px;align-items:center}
 .replay p{margin:2px 0 10px}
 .who{font-family:var(--hand);font-size:22px;min-height:28px}

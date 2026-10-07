@@ -133,7 +133,9 @@ function heroTap(e){if(!model)return;
 $('hero').addEventListener('click',heroTap);
 $('hero').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();heroTap({});}});
 $('flipA').onclick=()=>$('flipA').classList.toggle('open');
-$('flipB').onclick=()=>{$('flipB').classList.toggle('open');if(model?.won&&$('flipB').classList.contains('open'))fx.burst(25);};
+// The fake's detail line names everyone's word, so it waits until that card is flipped.
+function syncDetail(){$('resultDetail').hidden=!!model?.undercover&&!$('flipB').classList.contains('open');}
+$('flipB').onclick=()=>{$('flipB').classList.toggle('open');syncDetail();if(model?.won&&$('flipB').classList.contains('open'))fx.burst(25);};
 let replaying=false;
 $('replayReveal').onclick=async()=>{if(replaying||!results)return;replaying=true;
  await finalCanvas.replay((s)=>{const w=$('replayWho');if(!s){w.textContent='That’s everyone';w.style.color='';return;}
@@ -153,8 +155,12 @@ function renderResults(){
  $('resultRole').textContent=model.undercover?'You were the fake':'You were a civilian';
  $('tapHint').textContent=model.won?'Tap for more confetti':'Tap to shake it off';
  $('hero').setAttribute('aria-label',model.won?'Celebrate':'Shake it off');
- $('civilianWord').textContent=results.wordA;$('undercoverWord').textContent=results.wordB;
- $('fakeLabel').textContent=model.undercover?'You, the fake':`${model.name}, the fake`;
+ // Your own word is face up; the other side's word is the card you flip.
+ const fakeLabel=model.undercover?'You, the fake':`${model.name}, the fake`;
+ const own=model.undercover?{label:fakeLabel,word:results.wordB,fake:true}:{label:'Everyone',word:results.wordA,fake:false};
+ const other=model.undercover?{label:'Everyone else',word:results.wordA,fake:false,front:'Tap to reveal everyone’s word'}:{label:fakeLabel,word:results.wordB,fake:true,front:'Tap to reveal the fake’s word'};
+ $('flipALabel').textContent=own.label;$('flipAWord').textContent=own.word;$('flipAWord').classList.toggle('fake-word',own.fake);
+ $('flipBFront').textContent=other.front;$('flipBLabel').textContent=other.label;$('flipBWord').textContent=other.word;$('flipBWord').classList.toggle('fake-word',other.fake);
  $('resultDetail').textContent=model.detail;
  const total=Math.max(1,results.votes.length),list=$('votes');list.replaceChildren();
  [...state.players].sort((a,b)=>(model.counts.get(b.id)||0)-(model.counts.get(a.id)||0)).forEach(p=>{
@@ -163,7 +169,7 @@ function renderResults(){
   setTimeout(()=>fill.style.width=(100*n/total)+'%',resultShown?0:300);});
  $('again').hidden=!host;$('waitHost').hidden=host;
  if(!replaying)finalCanvas.update(g.strokes,false,null,{halo:results.undercoverId});
- if(!resultShown){resultShown=true;$('flipB').classList.remove('open');$('replayWho').textContent='The final drawing';$('replayWho').style.color='';
+ if(!resultShown){resultShown=true;$('flipB').classList.remove('open');syncDetail();$('replayWho').textContent='The final drawing';$('replayWho').style.color='';
   slam();requestAnimationFrame(()=>fx.start(model.won));}
 }
 
