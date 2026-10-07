@@ -1,7 +1,7 @@
 (function(){
  const reduce=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
  function board(canvas){
-  let strokes=[],preview=null,active=false,points=[],allowed=false,color='#1E1B4B',halo=null,limit=null,partial=null;
+  let strokes=[],preview=null,active=false,points=[],allowed=false,pending=null,color='#1E1B4B',halo=null,limit=null,partial=null;
   const ctx=canvas.getContext('2d');
   function path(pts,size){ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x*size,y*size):ctx.moveTo(x*size,y*size));}
   function paint(s,upTo){
@@ -20,18 +20,23 @@
    const list=limit==null?strokes:strokes.slice(0,limit);list.forEach(s=>paint(s));
    if(partial)paint(partial.s,partial.n);
    if(preview){paint(preview);pen(preview);}
+   if(pending)paint({points:pending,color});
    if(active)paint({points,color});
   }
   function point(e){const r=canvas.getBoundingClientRect();return [Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))];}
-  canvas.addEventListener('pointerdown',e=>{if(!allowed||active)return;active=true;points=[point(e)];canvas.setPointerCapture(e.pointerId);redraw();});
+  canvas.addEventListener('pointerdown',e=>{if(!allowed||active||pending)return;active=true;points=[point(e)];canvas.setPointerCapture(e.pointerId);redraw();});
   canvas.addEventListener('pointermove',e=>{if(!active)return;e.preventDefault();if(points.length>=500)return;const p=point(e),last=points[points.length-1];if(Math.hypot(p[0]-last[0],p[1]-last[1])<.002)return;points.push(p);redraw();window.dispatchEvent(new CustomEvent('board:progress',{detail:points.slice()}));});
-  function finish(e){if(!active)return;e.preventDefault();active=false;allowed=false;canvas.classList.remove('can-draw');const sent=points.slice();points=[];strokes=strokes.concat([{points:sent,color}]);redraw();window.dispatchEvent(new CustomEvent('board:submit',{detail:sent}));}
+  // A finished stroke stays pending until the player confirms it or undoes it.
+  function finish(e){if(!active)return;e.preventDefault();active=false;pending=points.slice();points=[];canvas.classList.remove('can-draw');redraw();window.dispatchEvent(new CustomEvent('board:pending',{detail:pending}));}
   canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);
   new ResizeObserver(redraw).observe(canvas);
   let replayId=0;
   return {
    update(list,canDraw,ownColor,opts={}){strokes=list||[];allowed=canDraw;color=ownColor||'#1E1B4B';halo=opts.halo||null;preview=null;limit=null;partial=null;replayId++;
-    canvas.classList.toggle('can-draw',!!canDraw);if(!canDraw){active=false;points=[];}redraw();},
+    if(!canDraw){active=false;points=[];pending=null;}canvas.classList.toggle('can-draw',!!canDraw&&!pending);redraw();},
+   hasPending(){return !!pending;},
+   undo(){if(!pending)return false;pending=null;canvas.classList.toggle('can-draw',allowed);redraw();return true;},
+   confirm(){if(!pending)return null;const sent=pending;pending=null;allowed=false;strokes=strokes.concat([{points:sent,color}]);canvas.classList.remove('can-draw');redraw();return sent;},
    live(stroke){preview=stroke;redraw();},
    redraw,
    async replay(onStroke){

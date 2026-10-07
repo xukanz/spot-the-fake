@@ -51,6 +51,7 @@ io.on('connection',socket=>{
  let lastProgress=0;
  handler(socket,'stroke:progress',({points})=>{const {room,p}=seat(socket);if(room.phase!=='drawing'||G.current(room)!==p.id||Date.now()>room.game.endsAt||!G.validatePoints(points))return {};
   if(Date.now()-lastProgress<50)return {};lastProgress=Date.now();socket.to(room.code).emit('stroke:live',{playerId:p.id,color:p.color,points});return {};});
+ handler(socket,'stroke:undo',()=>{const {room,p}=seat(socket);if(room.phase==='drawing'&&G.current(room)===p.id)socket.to(room.code).emit('stroke:live',null);return {};});
  handler(socket,'chat:send',({text})=>{const {room,p}=seat(socket);if(room.phase!=='discussion')throw Error('Chat is open during discussion.');text=String(text??'').trim().slice(0,100);if(!text)throw Error('Enter a message.');room.game.chat.push({playerId:p.id,text,ts:Date.now()});emit(room);return {};});
  handler(socket,'vote:cast',({targetId})=>{const {room,p}=seat(socket);if(room.phase!=='voting')throw Error('Voting is closed.');if(targetId===p.id||!room.players.get(targetId)?.connected)throw Error('Vote for another connected player.');if(room.game.votes.has(p.id))throw Error('You have already voted.');room.game.votes.set(p.id,targetId);
   if(room.game.votes.size===[...room.players.values()].filter(x=>x.connected).length){clearTimeout(room.timer);G.resolveVote(room);phaseTimer(room);}emit(room);return {};});

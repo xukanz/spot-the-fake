@@ -2,7 +2,7 @@ const socket=io();const $=id=>document.getElementById(id);
 const canvas=DrawingBoard($('board')),finalCanvas=DrawingBoard($('finalBoard'));
 const DURATION={drawing:20,discussion:60,voting:30,guessing:20};
 const reduceMotion=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-let state=null,me=null,word='',wordHidden=false,results=null,submitted=false,resultShown=false,myVote=null,model=null;
+let statusBase='',state=null,me=null,word='',wordHidden=false,results=null,submitted=false,resultShown=false,myVote=null,model=null;
 const storage={get(k){try{return localStorage.getItem(k);}catch{return null;}},set(k,v){try{localStorage.setItem(k,v);}catch{}},remove(k){try{localStorage.removeItem(k);}catch{}}};
 let alertTimer;
 function alertMsg(msg){$('alert').textContent=msg;$('alert').hidden=false;clearTimeout(alertTimer);alertTimer=setTimeout(()=>{$('alert').hidden=true},5000);}
@@ -82,10 +82,11 @@ function renderGame(){
   discussion:'Talk it over. Whose stroke looks off?',voting:voted?'Vote locked in. Waiting for the others.':'Vote for the fake',
   guessing:guesser===me?'You were caught! Guess their word to win':`${person(guesser)} was caught and is guessing the word…`})[phase]||'';
  $('statusText').textContent=text;
+ statusBase=text;
  $('status').classList.toggle('mine',(phase==='drawing'&&turn)||(phase==='guessing'&&guesser===me)||(phase==='voting'&&!voted));
  $('statusDot').style.background=phase==='drawing'?(drawer?.color||'#FFD23F'):phase==='guessing'?(player(guesser)?.color||'#FFD23F'):'#FFD23F';
- const mine=player(me);canvas.update(g.strokes,phase==='drawing'&&turn&&!submitted,mine?.color);
- $('tip').hidden=!(phase==='drawing'&&turn);
+ const mine=player(me),myTurn=phase==='drawing'&&turn&&!submitted;canvas.update(g.strokes,myTurn,mine?.color);
+ $('drawActions').hidden=!myTurn;$('tip').hidden=!myTurn;syncDrawActions();
  renderSide(g,phase);
  $('chat').hidden=phase!=='discussion';
  const msgs=$('messages');msgs.replaceChildren();
@@ -93,10 +94,17 @@ function renderGame(){
  msgs.scrollTop=msgs.scrollHeight;
  $('guessBox').hidden=!(phase==='guessing'&&guesser===me);
 }
+function syncDrawActions(){const has=canvas.hasPending();$('undoStroke').disabled=!has;$('confirmStroke').disabled=!has;$('drawActions').classList.toggle('ready',has);
+ if(state?.phase==='drawing'&&state.game.turnId===me&&!submitted)$('statusText').textContent=has?'Happy with it? Tap Done, or undo and try again':statusBase;}
+function confirmStroke(){if(submitted)return;const pts=canvas.confirm();if(!pts)return;submitted=true;$('drawActions').hidden=true;$('tip').hidden=true;
+ $('statusText').textContent='Sent!';send('stroke:submit',{points:pts},()=>{});}
+$('undoStroke').onclick=()=>{if(canvas.undo()){socket.emit('stroke:undo');syncDrawActions();}};
+$('confirmStroke').onclick=confirmStroke;
 function tick(){
  const g=state?.game,phase=state?.phase,t=$('timer');
  if(!g||!DURATION[phase]){$('timerNum').textContent='';t.style.setProperty('--p','0%');t.classList.remove('hot');return;}
  const left=Math.max(0,(g.endsAt-Date.now())/1000),pct=Math.min(100,left/DURATION[phase]*100);
+ if(phase==='drawing'&&g.turnId===me&&!submitted&&left<0.8&&canvas.hasPending())confirmStroke();
  $('timerNum').textContent=Math.ceil(left);t.style.setProperty('--p',pct+'%');
  t.style.setProperty('--tc',left<=5?'#F2545B':phase==='voting'?'#8E6CEF':'#14A098');t.classList.toggle('hot',left<=5&&left>0);
 }
@@ -200,5 +208,5 @@ socket.on('stroke:live',stroke=>{if(state?.phase==='drawing')canvas.live(stroke)
 socket.on('reaction',r=>{if(state?.phase==='results')flyEmoji(r.emoji,r.playerId);});
 socket.on('error',e=>alertMsg(e.message));
 window.addEventListener('board:progress',e=>socket.emit('stroke:progress',{points:e.detail}));
-window.addEventListener('board:submit',e=>{submitted=true;send('stroke:submit',{points:e.detail},()=>{});});
+window.addEventListener('board:pending',()=>syncDrawActions());
 render();

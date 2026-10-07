@@ -94,7 +94,11 @@
     <div class="game-grid">
       <div class="board-wrap">
         <div class="paper"><canvas id="board" width="600" height="600" aria-label="Shared drawing canvas"></canvas></div>
-        <p id="tip" class="muted small center">Lift your finger to finish. No undo.</p>
+        <div id="drawActions" class="draw-actions" hidden>
+          <button id="undoStroke" type="button" class="btn">↶ Undo</button>
+          <button id="confirmStroke" type="button" class="btn btn-sun">Done</button>
+        </div>
+        <p id="tip" class="muted small center">Draw one stroke. You can undo it before tapping Done.</p>
       </div>
       <aside class="side">
         <div id="playersBox">

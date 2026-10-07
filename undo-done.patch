@@ -1,0 +1,150 @@
+diff --git a/README.md b/README.md
+index f3c9f4e..5f3ff7e 100644
+--- a/README.md
++++ b/README.md
+@@ -4,7 +4,7 @@ A live drawing and deduction game for 3–8 players on phones or computers. One
+ 
+ ## Play
+ 
+-One person creates a room and shares the invite URL. Each player receives a secret word; one player has a similar but different word and does not know they are undercover. Take turns drawing one continuous stroke each in two rounds (20 seconds per turn). Discuss for 60 seconds, then each player has 30 seconds to vote for someone else. A tie or an incorrect accusation gives the undercover the win. If caught, the undercover gets 20 seconds to guess the civilians’ word; a correct guess wins, otherwise the civilians win.
++One person creates a room and shares the invite URL. Each player receives a secret word; one player has a similar but different word and does not know they are undercover. Take turns drawing one continuous stroke each in two rounds (20 seconds per turn). You can undo your stroke and redraw it until you tap Done; an unconfirmed stroke is sent automatically when time runs out. Discuss for 60 seconds, then each player has 30 seconds to vote for someone else. A tie or an incorrect accusation gives the undercover the win. If caught, the undercover gets 20 seconds to guess the civilians’ word; a correct guess wins, otherwise the civilians win.
+ 
+ ## Run locally
+ 
+diff --git a/public/canvas.js b/public/canvas.js
+index f9622b3..bd7bead 100644
+--- a/public/canvas.js
++++ b/public/canvas.js
+@@ -1,7 +1,7 @@
+ (function(){
+  const reduce=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function board(canvas){
+-  let strokes=[],preview=null,active=false,points=[],allowed=false,color='#1E1B4B',halo=null,limit=null,partial=null;
++  let strokes=[],preview=null,active=false,points=[],allowed=false,pending=null,color='#1E1B4B',halo=null,limit=null,partial=null;
+   const ctx=canvas.getContext('2d');
+   function path(pts,size){ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x*size,y*size):ctx.moveTo(x*size,y*size));}
+   function paint(s,upTo){
+@@ -20,18 +20,23 @@
+    const list=limit==null?strokes:strokes.slice(0,limit);list.forEach(s=>paint(s));
+    if(partial)paint(partial.s,partial.n);
+    if(preview){paint(preview);pen(preview);}
++   if(pending)paint({points:pending,color});
+    if(active)paint({points,color});
+   }
+   function point(e){const r=canvas.getBoundingClientRect();return [Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))];}
+-  canvas.addEventListener('pointerdown',e=>{if(!allowed||active)return;active=true;points=[point(e)];canvas.setPointerCapture(e.pointerId);redraw();});
++  canvas.addEventListener('pointerdown',e=>{if(!allowed||active||pending)return;active=true;points=[point(e)];canvas.setPointerCapture(e.pointerId);redraw();});
+   canvas.addEventListener('pointermove',e=>{if(!active)return;e.preventDefault();if(points.length>=500)return;const p=point(e),last=points[points.length-1];if(Math.hypot(p[0]-last[0],p[1]-last[1])<.002)return;points.push(p);redraw();window.dispatchEvent(new CustomEvent('board:progress',{detail:points.slice()}));});
+-  function finish(e){if(!active)return;e.preventDefault();active=false;allowed=false;canvas.classList.remove('can-draw');const sent=points.slice();points=[];strokes=strokes.concat([{points:sent,color}]);redraw();window.dispatchEvent(new CustomEvent('board:submit',{detail:sent}));}
++  // A finished stroke stays pending until the player confirms it or undoes it.
++  function finish(e){if(!active)return;e.preventDefault();active=false;pending=points.slice();points=[];canvas.classList.remove('can-draw');redraw();window.dispatchEvent(new CustomEvent('board:pending',{detail:pending}));}
+   canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);
+   new ResizeObserver(redraw).observe(canvas);
+   let replayId=0;
+   return {
+    update(list,canDraw,ownColor,opts={}){strokes=list||[];allowed=canDraw;color=ownColor||'#1E1B4B';halo=opts.halo||null;preview=null;limit=null;partial=null;replayId++;
+-    canvas.classList.toggle('can-draw',!!canDraw);if(!canDraw){active=false;points=[];}redraw();},
++    if(!canDraw){active=false;points=[];pending=null;}canvas.classList.toggle('can-draw',!!canDraw&&!pending);redraw();},
++   hasPending(){return !!pending;},
++   undo(){if(!pending)return false;pending=null;canvas.classList.toggle('can-draw',allowed);redraw();return true;},
++   confirm(){if(!pending)return null;const sent=pending;pending=null;allowed=false;strokes=strokes.concat([{points:sent,color}]);canvas.classList.remove('can-draw');redraw();return sent;},
+    live(stroke){preview=stroke;redraw();},
+    redraw,
+    async replay(onStroke){
+diff --git a/public/client.js b/public/client.js
+index 94a6baa..e2e6f12 100644
+--- a/public/client.js
++++ b/public/client.js
+@@ -2,7 +2,7 @@ const socket=io();const $=id=>document.getElementById(id);
+ const canvas=DrawingBoard($('board')),finalCanvas=DrawingBoard($('finalBoard'));
+ const DURATION={drawing:20,discussion:60,voting:30,guessing:20};
+ const reduceMotion=()=>window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+-let state=null,me=null,word='',wordHidden=false,results=null,submitted=false,resultShown=false,myVote=null,model=null;
++let statusBase='',state=null,me=null,word='',wordHidden=false,results=null,submitted=false,resultShown=false,myVote=null,model=null;
+ const storage={get(k){try{return localStorage.getItem(k);}catch{return null;}},set(k,v){try{localStorage.setItem(k,v);}catch{}},remove(k){try{localStorage.removeItem(k);}catch{}}};
+ let alertTimer;
+ function alertMsg(msg){$('alert').textContent=msg;$('alert').hidden=false;clearTimeout(alertTimer);alertTimer=setTimeout(()=>{$('alert').hidden=true},5000);}
+@@ -82,10 +82,11 @@ function renderGame(){
+   discussion:'Talk it over. Whose stroke looks off?',voting:voted?'Vote locked in. Waiting for the others.':'Vote for the fake',
+   guessing:guesser===me?'You were caught! Guess their word to win':`${person(guesser)} was caught and is guessing the word…`})[phase]||'';
+  $('statusText').textContent=text;
++ statusBase=text;
+  $('status').classList.toggle('mine',(phase==='drawing'&&turn)||(phase==='guessing'&&guesser===me)||(phase==='voting'&&!voted));
+  $('statusDot').style.background=phase==='drawing'?(drawer?.color||'#FFD23F'):phase==='guessing'?(player(guesser)?.color||'#FFD23F'):'#FFD23F';
+- const mine=player(me);canvas.update(g.strokes,phase==='drawing'&&turn&&!submitted,mine?.color);
+- $('tip').hidden=!(phase==='drawing'&&turn);
++ const mine=player(me),myTurn=phase==='drawing'&&turn&&!submitted;canvas.update(g.strokes,myTurn,mine?.color);
++ $('drawActions').hidden=!myTurn;$('tip').hidden=!myTurn;syncDrawActions();
+  renderSide(g,phase);
+  $('chat').hidden=phase!=='discussion';
+  const msgs=$('messages');msgs.replaceChildren();
+@@ -93,10 +94,17 @@ function renderGame(){
+  msgs.scrollTop=msgs.scrollHeight;
+  $('guessBox').hidden=!(phase==='guessing'&&guesser===me);
+ }
++function syncDrawActions(){const has=canvas.hasPending();$('undoStroke').disabled=!has;$('confirmStroke').disabled=!has;$('drawActions').classList.toggle('ready',has);
++ if(state?.phase==='drawing'&&state.game.turnId===me&&!submitted)$('statusText').textContent=has?'Happy with it? Tap Done, or undo and try again':statusBase;}
++function confirmStroke(){if(submitted)return;const pts=canvas.confirm();if(!pts)return;submitted=true;$('drawActions').hidden=true;$('tip').hidden=true;
++ $('statusText').textContent='Sent!';send('stroke:submit',{points:pts},()=>{});}
++$('undoStroke').onclick=()=>{if(canvas.undo()){socket.emit('stroke:undo');syncDrawActions();}};
++$('confirmStroke').onclick=confirmStroke;
+ function tick(){
+  const g=state?.game,phase=state?.phase,t=$('timer');
+  if(!g||!DURATION[phase]){$('timerNum').textContent='';t.style.setProperty('--p','0%');t.classList.remove('hot');return;}
+  const left=Math.max(0,(g.endsAt-Date.now())/1000),pct=Math.min(100,left/DURATION[phase]*100);
++ if(phase==='drawing'&&g.turnId===me&&!submitted&&left<0.8&&canvas.hasPending())confirmStroke();
+  $('timerNum').textContent=Math.ceil(left);t.style.setProperty('--p',pct+'%');
+  t.style.setProperty('--tc',left<=5?'#F2545B':phase==='voting'?'#8E6CEF':'#14A098');t.classList.toggle('hot',left<=5&&left>0);
+ }
+@@ -200,5 +208,5 @@ socket.on('stroke:live',stroke=>{if(state?.phase==='drawing')canvas.live(stroke)
+ socket.on('reaction',r=>{if(state?.phase==='results')flyEmoji(r.emoji,r.playerId);});
+ socket.on('error',e=>alertMsg(e.message));
+ window.addEventListener('board:progress',e=>socket.emit('stroke:progress',{points:e.detail}));
+-window.addEventListener('board:submit',e=>{submitted=true;send('stroke:submit',{points:e.detail},()=>{});});
++window.addEventListener('board:pending',()=>syncDrawActions());
+ render();
+diff --git a/public/index.html b/public/index.html
+index 9f44b7c..30a86fc 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -94,7 +94,11 @@
+     <div class="game-grid">
+       <div class="board-wrap">
+         <div class="paper"><canvas id="board" width="600" height="600" aria-label="Shared drawing canvas"></canvas></div>
+-        <p id="tip" class="muted small center">Lift your finger to finish. No undo.</p>
++        <div id="drawActions" class="draw-actions" hidden>
++          <button id="undoStroke" type="button" class="btn">↶ Undo</button>
++          <button id="confirmStroke" type="button" class="btn btn-sun">Done</button>
++        </div>
++        <p id="tip" class="muted small center">Draw one stroke. You can undo it before tapping Done.</p>
+       </div>
+       <aside class="side">
+         <div id="playersBox">
+diff --git a/public/style.css b/public/style.css
+index 359c917..e0618f2 100644
+--- a/public/style.css
++++ b/public/style.css
+@@ -110,7 +110,10 @@ label{font-weight:700;font-size:14px;margin-top:6px}
+ .banner.mine .dot{box-shadow:0 0 0 2px var(--ink);animation:blink 1.2s infinite}
+ @keyframes blink{50%{opacity:.35}}
+ .game-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;padding:0 18px}
+-.board-wrap .muted{margin:14px 0 0}
++.board-wrap .muted{margin:12px 0 0}
++.draw-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:16px}
++.draw-actions .btn:disabled{opacity:.4}
++.draw-actions.ready #confirmStroke{animation:nudge 2.4s .6s ease-in-out infinite}
+ .paper{position:relative;border:2.5px solid var(--ink);border-radius:8px;box-shadow:5px 5px 0 var(--ink);background:#fff}
+ .paper::before,.paper::after{content:"";position:absolute;width:56px;height:18px;background:rgba(255,210,63,.8);top:-9px;z-index:2;pointer-events:none}
+ .paper::before{left:14px;transform:rotate(-6deg)}.paper::after{right:14px;transform:rotate(5deg)}
+diff --git a/server.js b/server.js
+index a857650..190c402 100644
+--- a/server.js
++++ b/server.js
+@@ -51,6 +51,7 @@ io.on('connection',socket=>{
+  let lastProgress=0;
+  handler(socket,'stroke:progress',({points})=>{const {room,p}=seat(socket);if(room.phase!=='drawing'||G.current(room)!==p.id||Date.now()>room.game.endsAt||!G.validatePoints(points))return {};
+   if(Date.now()-lastProgress<50)return {};lastProgress=Date.now();socket.to(room.code).emit('stroke:live',{playerId:p.id,color:p.color,points});return {};});
++ handler(socket,'stroke:undo',()=>{const {room,p}=seat(socket);if(room.phase==='drawing'&&G.current(room)===p.id)socket.to(room.code).emit('stroke:live',null);return {};});
+  handler(socket,'chat:send',({text})=>{const {room,p}=seat(socket);if(room.phase!=='discussion')throw Error('Chat is open during discussion.');text=String(text??'').trim().slice(0,100);if(!text)throw Error('Enter a message.');room.game.chat.push({playerId:p.id,text,ts:Date.now()});emit(room);return {};});
+  handler(socket,'vote:cast',({targetId})=>{const {room,p}=seat(socket);if(room.phase!=='voting')throw Error('Voting is closed.');if(targetId===p.id||!room.players.get(targetId)?.connected)throw Error('Vote for another connected player.');if(room.game.votes.has(p.id))throw Error('You have already voted.');room.game.votes.set(p.id,targetId);
+   if(room.game.votes.size===[...room.players.values()].filter(x=>x.connected).length){clearTimeout(room.timer);G.resolveVote(room);phaseTimer(room);}emit(room);return {};});

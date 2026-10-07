@@ -110,7 +110,10 @@ label{font-weight:700;font-size:14px;margin-top:6px}
 .banner.mine .dot{box-shadow:0 0 0 2px var(--ink);animation:blink 1.2s infinite}
 @keyframes blink{50%{opacity:.35}}
 .game-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;padding:0 18px}
-.board-wrap .muted{margin:14px 0 0}
+.board-wrap .muted{margin:12px 0 0}
+.draw-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:16px}
+.draw-actions .btn:disabled{opacity:.4}
+.draw-actions.ready #confirmStroke{animation:nudge 2.4s .6s ease-in-out infinite}
 .paper{position:relative;border:2.5px solid var(--ink);border-radius:8px;box-shadow:5px 5px 0 var(--ink);background:#fff}
 .paper::before,.paper::after{content:"";position:absolute;width:56px;height:18px;background:rgba(255,210,63,.8);top:-9px;z-index:2;pointer-events:none}
 .paper::before{left:14px;transform:rotate(-6deg)}.paper::after{right:14px;transform:rotate(5deg)}

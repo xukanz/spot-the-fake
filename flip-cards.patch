@@ -1,0 +1,67 @@
+diff --git a/public/client.js b/public/client.js
+index 1235998..94a6baa 100644
+--- a/public/client.js
++++ b/public/client.js
+@@ -133,7 +133,9 @@ function heroTap(e){if(!model)return;
+ $('hero').addEventListener('click',heroTap);
+ $('hero').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();heroTap({});}});
+ $('flipA').onclick=()=>$('flipA').classList.toggle('open');
+-$('flipB').onclick=()=>{$('flipB').classList.toggle('open');if(model?.won&&$('flipB').classList.contains('open'))fx.burst(25);};
++// The fake's detail line names everyone's word, so it waits until that card is flipped.
++function syncDetail(){$('resultDetail').hidden=!!model?.undercover&&!$('flipB').classList.contains('open');}
++$('flipB').onclick=()=>{$('flipB').classList.toggle('open');syncDetail();if(model?.won&&$('flipB').classList.contains('open'))fx.burst(25);};
+ let replaying=false;
+ $('replayReveal').onclick=async()=>{if(replaying||!results)return;replaying=true;
+  await finalCanvas.replay((s)=>{const w=$('replayWho');if(!s){w.textContent='That’s everyone';w.style.color='';return;}
+@@ -153,8 +155,12 @@ function renderResults(){
+  $('resultRole').textContent=model.undercover?'You were the fake':'You were a civilian';
+  $('tapHint').textContent=model.won?'Tap for more confetti':'Tap to shake it off';
+  $('hero').setAttribute('aria-label',model.won?'Celebrate':'Shake it off');
+- $('civilianWord').textContent=results.wordA;$('undercoverWord').textContent=results.wordB;
+- $('fakeLabel').textContent=model.undercover?'You, the fake':`${model.name}, the fake`;
++ // Your own word is face up; the other side's word is the card you flip.
++ const fakeLabel=model.undercover?'You, the fake':`${model.name}, the fake`;
++ const own=model.undercover?{label:fakeLabel,word:results.wordB,fake:true}:{label:'Everyone',word:results.wordA,fake:false};
++ const other=model.undercover?{label:'Everyone else',word:results.wordA,fake:false,front:'Tap to reveal everyone’s word'}:{label:fakeLabel,word:results.wordB,fake:true,front:'Tap to reveal the fake’s word'};
++ $('flipALabel').textContent=own.label;$('flipAWord').textContent=own.word;$('flipAWord').classList.toggle('fake-word',own.fake);
++ $('flipBFront').textContent=other.front;$('flipBLabel').textContent=other.label;$('flipBWord').textContent=other.word;$('flipBWord').classList.toggle('fake-word',other.fake);
+  $('resultDetail').textContent=model.detail;
+  const total=Math.max(1,results.votes.length),list=$('votes');list.replaceChildren();
+  [...state.players].sort((a,b)=>(model.counts.get(b.id)||0)-(model.counts.get(a.id)||0)).forEach(p=>{
+@@ -163,7 +169,7 @@ function renderResults(){
+   setTimeout(()=>fill.style.width=(100*n/total)+'%',resultShown?0:300);});
+  $('again').hidden=!host;$('waitHost').hidden=host;
+  if(!replaying)finalCanvas.update(g.strokes,false,null,{halo:results.undercoverId});
+- if(!resultShown){resultShown=true;$('flipB').classList.remove('open');$('replayWho').textContent='The final drawing';$('replayWho').style.color='';
++ if(!resultShown){resultShown=true;$('flipB').classList.remove('open');syncDetail();$('replayWho').textContent='The final drawing';$('replayWho').style.color='';
+   slam();requestAnimationFrame(()=>fx.start(model.won));}
+ }
+ 
+diff --git a/public/index.html b/public/index.html
+index 7b4e69a..9f44b7c 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -129,8 +129,8 @@
+   </div>
+   <div class="res-body">
+     <div class="flips">
+-      <button id="flipA" class="flip open" type="button"><span class="front">Everyone's word</span><span class="back"><small>Everyone</small><b id="civilianWord"></b></span></button>
+-      <button id="flipB" class="flip" type="button"><span class="front">Tap to reveal the fake's word</span><span class="back"><small id="fakeLabel"></small><b id="undercoverWord"></b></span></button>
++      <button id="flipA" class="flip open" type="button"><span id="flipAFront" class="front">Your word</span><span class="back"><small id="flipALabel"></small><b id="flipAWord"></b></span></button>
++      <button id="flipB" class="flip" type="button"><span id="flipBFront" class="front"></span><span class="back"><small id="flipBLabel"></small><b id="flipBWord"></b></span></button>
+     </div>
+     <p id="resultDetail" class="muted small"></p>
+     <div class="replay">
+diff --git a/public/style.css b/public/style.css
+index b0cf84e..c481aed 100644
+--- a/public/style.css
++++ b/public/style.css
+@@ -163,7 +163,7 @@ label{font-weight:700;font-size:14px;margin-top:6px}
+ .flip.open .front{transform:rotateY(-180deg)}.flip.open .back{transform:rotateY(0)}
+ .flip .back small{font-size:11px;color:var(--ink-soft);font-weight:700}
+ .flip .back b{font-family:var(--hand);font-weight:400;font-size:26px;line-height:1;overflow-wrap:anywhere}
+-#undercoverWord{color:var(--m-violet)}
++.flip .back b.fake-word{color:var(--m-violet)}
+ .replay{display:grid;grid-template-columns:128px 1fr;gap:14px;align-items:center}
+ .replay p{margin:2px 0 10px}
+ .who{font-family:var(--hand);font-size:22px;min-height:28px}

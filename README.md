@@ -4,7 +4,7 @@ A live drawing and deduction game for 3–8 players on phones or computers. One 
 
 ## Play
 
-One person creates a room and shares the invite URL. Each player receives a secret word; one player has a similar but different word and does not know they are undercover. Take turns drawing one continuous stroke each in two rounds (20 seconds per turn). Discuss for 60 seconds, then each player has 30 seconds to vote for someone else. A tie or an incorrect accusation gives the undercover the win. If caught, the undercover gets 20 seconds to guess the civilians’ word; a correct guess wins, otherwise the civilians win.
+One person creates a room and shares the invite URL. Each player receives a secret word; one player has a similar but different word and does not know they are undercover. Take turns drawing one continuous stroke each in two rounds (20 seconds per turn). You can undo your stroke and redraw it until you tap Done; an unconfirmed stroke is sent automatically when time runs out. Discuss for 60 seconds, then each player has 30 seconds to vote for someone else. A tie or an incorrect accusation gives the undercover the win. If caught, the undercover gets 20 seconds to guess the civilians’ word; a correct guess wins, otherwise the civilians win.
 
 ## Run locally
 
