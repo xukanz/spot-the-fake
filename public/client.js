@@ -1,6 +1,6 @@
 const socket=io();const $=id=>document.getElementById(id);
 const canvas=DrawingBoard($('board')),finalCanvas=DrawingBoard($('finalBoard'));
-let state=null,me=null,word='',wordHidden=false,results=null,submitted=false;
+let state=null,me=null,word='',wordHidden=false,results=null,submitted=false,resultShown=false;
 const storage={get(k){try{return localStorage.getItem(k);}catch{return null;}},set(k,v){try{localStorage.setItem(k,v);}catch{}},remove(k){try{localStorage.removeItem(k);}catch{}}};
 function alertMsg(msg){$('alert').textContent=msg;$('alert').hidden=false;setTimeout(()=>{$('alert').hidden=true},6000);}
 function send(event,payload={},after){socket.emit(event,payload,res=>{if(!res?.ok){if(res?.message)alertMsg(res.message);return;}after?.(res);});}
@@ -17,14 +17,54 @@ $('createForm').onsubmit=e=>{e.preventDefault();const name=$('createName').value
 $('joinForm').onsubmit=e=>{e.preventDefault();const name=$('joinName').value.trim(),code=$('joinCode').value.trim().toUpperCase();if(!name)return alertMsg('Enter your name.');send('room:join',{code,name,playerId:storage.get('spot:id:'+code)},res=>enter(res.code,res.playerId,name));};
 $('joinCode').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,4)});
 $('start').onclick=()=>send('game:start');$('again').onclick=()=>send('game:restart');
+$('replayReveal').onclick=()=>playReveal();
 $('invite').onclick=async()=>{try{await navigator.clipboard.writeText(location.href);$('invite').textContent='Copied!';setTimeout(()=>$('invite').textContent='Copy invite link',2000);}catch{alertMsg('Copy the URL from your address bar.')}};
-document.querySelectorAll('.leave').forEach(b=>b.onclick=()=>{send('room:leave',{},()=>{storage.remove('spot:room');me=null;state=null;word='';results=null;history.replaceState(null,'',location.pathname);showEntry('homeMenu');render();});});
+document.querySelectorAll('.leave').forEach(b=>b.onclick=()=>{send('room:leave',{},()=>{storage.remove('spot:room');me=null;state=null;word='';results=null;resultShown=false;history.replaceState(null,'',location.pathname);showEntry('homeMenu');render();});});
 $('toggleWord').onclick=()=>{wordHidden=!wordHidden;renderWord();};
 function renderWord(){$('word').textContent=wordHidden?'••••••':word||'Waiting…';$('toggleWord').textContent=wordHidden?'Show':'Hide';}
 $('chatForm').onsubmit=e=>{e.preventDefault();send('chat:send',{text:$('chatText').value},()=>$('chatText').value='');};
 $('guessForm').onsubmit=e=>{e.preventDefault();send('guess:submit',{text:$('guessText').value});};
 function addPlayer(list,p,suffix='',votable=false){const li=document.createElement('li'),dot=document.createElement('span');dot.className='dot';dot.style.background=p.color;li.append(dot,document.createTextNode(p.name+(p.id===me?' (you)':'')+(p.connected?'':' (offline)')+suffix));if(votable&&p.id!==me&&p.connected){const b=document.createElement('button');b.className='small';b.textContent='Vote';b.onclick=()=>send('vote:cast',{targetId:p.id});li.append(' ',b);}list.append(li);}
 function person(id){return state?.players.find(p=>p.id===id)?.name||'Unknown player';}
+const confettiColors=['#7ca6ed','#f5c66d','#d681aa','#85c6a4','#f3a478'];
+for(let i=0;i<24;i++){
+ const piece=document.createElement('i');piece.style.setProperty('--x',`${4+i*4}%`);
+ piece.style.setProperty('--drift',`${(i%2?1:-1)*(18+i%5*7)}px`);
+ piece.style.setProperty('--turn',`${210+i*37}deg`);
+ piece.style.setProperty('--delay',`${(i*17)%75/100}s`);
+ piece.style.setProperty('--color',confettiColors[i%5]);$('resultConfetti').append(piece);
+}
+function playReveal(){
+ const screen=$('results');screen.classList.remove('is-revealing');
+ void screen.offsetWidth;screen.classList.add('is-revealing');
+}
+function renderResults(g,host){
+ const model=GameResults.describe(state,results,me),screen=$('results');
+ screen.classList.toggle('win',model.won);screen.classList.toggle('lose',!model.won);
+ $('winner').textContent=model.won?'You won!':'You lost.';
+ $('resultBadge').textContent=model.won?'✦':'?';
+ $('resultRole').textContent=model.undercover?'YOU PLAYED AS THE UNDERCOVER':'YOU PLAYED AS A CIVILIAN';
+ $('resultSummary').textContent=model.summary;
+ $('undercoverName').textContent=model.name+' was undercover';
+ $('resultAvatar').textContent=model.name[0]?.toUpperCase()||'?';
+ $('resultAvatar').style.background=state.players.find(p=>p.id===results.undercoverId)?.color||'#cc6295';
+ const undercoverVotes=model.counts.get(results.undercoverId)||0;
+ $('resultVoteNote').textContent=undercoverVotes===1?'1 vote for the undercover':`${undercoverVotes} votes for the undercover`;
+ $('resultTag').textContent=model.caught?'CAUGHT':'ESCAPED';
+ // A correct final guess still follows a successful accusation.
+ if(results.guess&&results.guess.trim().toLowerCase()===results.wordA.trim().toLowerCase())$('resultTag').textContent='GUESSED IT';
+ $('civilianWord').textContent=results.wordA;$('undercoverWord').textContent=results.wordB;
+ $('resultDetail').textContent=model.detail;
+ $('votes').replaceChildren();
+ for(const p of state.players){
+  const count=model.counts.get(p.id)||0,li=document.createElement('li');li.className='result-vote';
+  const name=document.createElement('span'),track=document.createElement('span'),bar=document.createElement('span'),number=document.createElement('strong');
+  name.textContent=p.name;track.className='vote-track';bar.style.width=`${100*count/Math.max(1,results.votes.length)}%`;track.append(bar);
+  number.textContent=String(count);li.append(name,track,number);$('votes').append(li);
+ }
+ $('again').hidden=!host;finalCanvas.update(g.strokes,false);
+ if(!resultShown){resultShown=true;playReveal();}
+}
 function render(){
  const phase=state?.phase;
  $('home').hidden=!!state;$('lobby').hidden=phase!=='lobby';$('game').hidden=!phase||phase==='lobby'||phase==='results';$('results').hidden=phase!=='results';
@@ -42,13 +82,13 @@ function render(){
  $('gamePlayers').replaceChildren();state.players.forEach(p=>addPlayer($('gamePlayers'),p,p.id===g.turnId?' ✎ drawing':'',phase==='voting'&&!voted));
  $('chat').hidden=phase!=='discussion';$('messages').replaceChildren();g.chat.forEach(m=>{const p=document.createElement('p');const strong=document.createElement('strong');strong.textContent=person(m.playerId)+': ';p.append(strong,document.createTextNode(m.text));$('messages').append(p);});$('messages').scrollTop=$('messages').scrollHeight;
  $('guessBox').hidden=phase!=='guessing';$('guessText').disabled=phase!=='guessing';
- if(phase==='results'&&results){$('winner').textContent=results.winner==='undercover'?'Undercover wins!':'Civilians win!';$('reveal').textContent=`Civilians: ${results.wordA} • Undercover: ${results.wordB} • Undercover player: ${person(results.undercoverId)}${results.guess!==null?` • Final guess: ${results.guess||'(no guess)'}`:''}`;$('votes').replaceChildren();state.players.forEach(p=>{const n=results.votes.filter(([,target])=>target===p.id).length;addPlayer($('votes'),p,` — ${n} vote${n===1?'':'s'}`);});$('again').hidden=!host;finalCanvas.update(g.strokes,false);}
+ if(phase==='results'&&results)renderResults(g,host);
 }
 function tick(){if(state?.game&&['drawing','discussion','voting','guessing'].includes(state.phase))$('timer').textContent=Math.max(0,Math.ceil((state.game.endsAt-Date.now())/1000))+'s';else $('timer').textContent='';}
 setInterval(tick,200);
 socket.on('connect',()=>{const code=storage.get('spot:room');if(code&&storage.get('spot:id:'+code))send('room:join',{code,name:storage.get('spot:name')||$('joinName').value,playerId:storage.get('spot:id:'+code)},res=>enter(res.code,res.playerId,storage.get('spot:name')||$('joinName').value));});
 socket.on('disconnect',()=>alertMsg('Connection lost. Reconnecting…'));
-socket.on('room:state',s=>{if(state?.phase!==s.phase||state?.game?.turnId!==s.game?.turnId)submitted=false;if(s.phase==='lobby'&&state?.phase!=='lobby')word='';if(s.phase==='drawing'&&state?.phase==='results'){results=null;wordHidden=false;}$('joinCode').value=s.code;state=s;render();tick();});
+socket.on('room:state',s=>{if(state?.phase!==s.phase||state?.game?.turnId!==s.game?.turnId)submitted=false;if(s.phase!=='results')resultShown=false;if(s.phase==='lobby'&&state?.phase!=='lobby')word='';if(s.phase==='drawing'&&state?.phase==='results'){results=null;wordHidden=false;}$('joinCode').value=s.code;state=s;render();tick();});
 socket.on('game:yourWord',v=>{word=v.word;wordHidden=false;renderWord();});
 socket.on('game:results',r=>{results=r;render();});
 socket.on('stroke:live',stroke=>{if(state?.phase==='drawing')canvas.live(stroke);});
